@@ -71,9 +71,8 @@ func (s *GobdSuite) TestInclude(c *check.C) {
 func (s *GobdSuite) TestNewOBD(c *check.C) {
 	ms := newMockSerial()
 	ms.addResponse("0100", "41 00 03")
-	debug := func(string, ...interface{}) {}
 
-	obd, err := NewDebugOBD(ms, debug)
+	obd, err := NewDebugOBD(ms, c.Logf)
 	c.Assert(err, check.IsNil)
 	c.Check(ms.messages, check.HasLen, 3)
 	// Check that the version got set
@@ -86,7 +85,7 @@ func (s *GobdSuite) TestNewOBD(c *check.C) {
 	c.Check(string(ms.messages[2]), check.Equals, "0100\r\n")
 
 	// Check that the PIDs got set correctly
-	c.Check(obd.pids, check.DeepEquals, []uint{7, 8})
+	c.Check(obd.pids, check.DeepEquals, []uint{0, 7, 8})
 }
 
 func (s *GobdSuite) TestParseOutput(c *check.C) {
@@ -97,9 +96,8 @@ func (s *GobdSuite) TestParseOutput(c *check.C) {
 func (s *GobdSuite) TestUnsupportedPID(c *check.C) {
 	ms := newMockSerial()
 	ms.addResponse("0100", "41 00 03")
-	debug := func(string, ...interface{}) {}
 
-	obd, err := NewDebugOBD(ms, debug)
+	obd, err := NewDebugOBD(ms, c.Logf)
 	c.Assert(err, check.IsNil)
 
 	_, err = obd.current(5)
@@ -110,9 +108,8 @@ func (s *GobdSuite) TestCurrent(c *check.C) {
 	ms := newMockSerial()
 	ms.addResponse("0100", "41 00 03")
 	ms.addResponse("0107", "41 07 55")
-	debug := func(string, ...interface{}) {}
 
-	obd, err := NewDebugOBD(ms, debug)
+	obd, err := NewDebugOBD(ms, c.Logf)
 	c.Assert(err, check.IsNil)
 
 	byt, err := obd.current(7)
@@ -126,9 +123,8 @@ func (s *GobdSuite) TestCurrentInt(c *check.C) {
 	ms.addResponse("0106", "41 06 00 00")
 	ms.addResponse("0107", "41 07 55 82 A0")
 	ms.addResponse("0108", "41 08 F")
-	debug := func(string, ...interface{}) {}
 
-	obd, err := NewDebugOBD(ms, debug)
+	obd, err := NewDebugOBD(ms, c.Logf)
 	c.Assert(err, check.IsNil)
 
 	val, err := obd.currentInt(6)
@@ -142,4 +138,34 @@ func (s *GobdSuite) TestCurrentInt(c *check.C) {
 	val, err = obd.currentInt(8)
 	c.Assert(err, check.IsNil)
 	c.Check(val, check.Equals, 15)
+}
+
+func (s *GobdSuite) TestListPidsFull(c *check.C) {
+	ms := newMockSerial()
+	ms.addResponse("0100", "41 00 01 00 00 01")
+	ms.addResponse("0120", "41 20 01 00 00 01")
+	ms.addResponse("0140", "41 40 01 00 00 01")
+	ms.addResponse("0160", "41 60 01 00 00 01")
+	ms.addResponse("0180", "41 80 01 00 00 01")
+	ms.addResponse("01a0", "41 A0 01 00 00 01")
+	ms.addResponse("01c0", "41 C0 01 00 00 01")
+
+	obd, err := NewDebugOBD(ms, c.Logf)
+	c.Assert(err, check.IsNil)
+	c.Check(obd.pids, check.DeepEquals, []uint{0, 8, 32, 40, 64, 72, 96, 104, 128, 136, 160, 168, 192, 200, 224})
+}
+
+func (s *GobdSuite) ParseMode1(c *check.C) {
+	_, err := parseMode1Response([]byte(""))
+	c.Check(err, check.NotNil)
+
+	_, err = parseMode1Response([]byte("UNAVAILABLE"))
+	c.Check(err, check.NotNil)
+
+	_, err = parseMode1Response([]byte("00 00 00"))
+	c.Check(err, check.NotNil)
+
+	val, err := parseMode1Response([]byte("41 00 00 11 22"))
+	c.Check(err, check.IsNil)
+	c.Check(val, check.DeepEquals, []byte{'0', '0', '1', '1', '2', '2'})
 }

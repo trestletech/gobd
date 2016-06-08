@@ -156,15 +156,17 @@ func includes(haystack []uint, needle int) bool {
 }
 
 func (obd *OBD) listSupportedPIDs() ([]uint, error) {
-	allPids, err := obd.listPIDsForBase(0)
+	allPids := []uint{0}
+	pids, err := obd.listPIDsForBase(0)
 	if err != nil {
 		return allPids, err
 	}
+	allPids = append(allPids, pids...)
 	if !includes(allPids, 32) {
 		return allPids, nil
 	}
 
-	pids, err := obd.listPIDsForBase(32)
+	pids, err = obd.listPIDsForBase(32)
 	if err != nil {
 		return allPids, err
 	}
@@ -219,6 +221,7 @@ func (obd *OBD) listSupportedPIDs() ([]uint, error) {
 }
 
 func (obd *OBD) listPIDsForBase(base int) ([]uint, error) {
+	obd.debug("Getting PIDs %d", base)
 	cmd := fmt.Sprintf("01%02x", base)
 	out, err := obd.exec(cmd)
 	if err != nil {
@@ -251,8 +254,6 @@ func extractPids(buf []byte, base int) []uint {
 }
 
 func parseMode1Response(buf []byte) ([]byte, error) {
-	log.Printf("Parsing mode 1: %s", string(buf))
-
 	if len(buf) < 2 || buf[0] != '4' || buf[1] != '1' {
 		// Error response
 		return nil, fmt.Errorf("Error mode 1 prefix response: %s", string(buf))
