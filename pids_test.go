@@ -33,4 +33,11 @@ func (ps *PidsSuite) TestEngineLoad(c *check.C) {
 	c.Assert(err, check.IsNil)
 	// Floats may not be identical. That's fine.
 	c.Check(math.Abs(l-10/2.55) < .00001, check.Equals, true)
+
+	ms.addResponse("0104", "41 04 FF")
+	l, err = obd.GetEngineLoad()
+	c.Assert(err, check.IsNil)
+	// Floats may not be identical. That's fine.
+	c.Check(math.Abs(l-255/2.55) < .00001, check.Equals, true)
+
 }
