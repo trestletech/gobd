@@ -6,22 +6,20 @@ import (
 	"log"
 	"strconv"
 	"time"
-
-	"github.com/tarm/serial"
 )
 
 type OBD struct {
 	pids  []uint
-	ser   *serial.Port
+	ser   SerialPort
 	debug func(format string, v ...interface{})
 	id    string
 }
 
-func NewOBD(ser *serial.Port) (*OBD, error) {
+func NewOBD(ser SerialPort) (*OBD, error) {
 	return NewDebugOBD(ser, func(string, ...interface{}) {})
 }
 
-func NewDebugOBD(ser *serial.Port, debug func(format string, v ...interface{})) (*OBD, error) {
+func NewDebugOBD(ser SerialPort, debug func(format string, v ...interface{})) (*OBD, error) {
 	obd := &OBD{
 		ser:   ser,
 		debug: debug,
@@ -255,7 +253,7 @@ func extractPids(buf []byte, base int) []uint {
 func parseMode1Response(buf []byte) ([]byte, error) {
 	log.Printf("Parsing mode 1: %s", string(buf))
 
-	if buf[0] != '4' || buf[1] != '1' {
+	if len(buf) < 2 || buf[0] != '4' || buf[1] != '1' {
 		// Error response
 		return nil, fmt.Errorf("Error mode 1 prefix response: %s", string(buf))
 	}
