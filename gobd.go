@@ -105,16 +105,6 @@ func pidNotSupportedError(pid int) error {
 	return fmt.Errorf("PID %d not supported on this system.", pid)
 }
 
-var engineLoadPID int = 4
-
-func (o *OBD) GetEngineLoad() (float64, error) {
-	if !includes(o.pids, engineLoadPID) {
-		return float64(0), pidNotSupportedError(engineLoadPID)
-	}
-	val, err := o.currentInt(engineLoadPID)
-	return float64(val) / 2.55, err
-}
-
 func (obd *OBD) current(pid int) ([]byte, error) {
 	cmd := fmt.Sprintf("01%02x", pid)
 	out, err := obd.exec(cmd)
