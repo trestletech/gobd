@@ -47,7 +47,14 @@ func NewDebugOBD(ser *serial.Port, debug func(format string, v ...interface{})) 
 
 	// Disable Echo
 	obd.debug("Disabling echo...")
-	_, err = obd.exec("ATE0")
+	err = obd.execNoRead("ATE0")
+	if err != nil {
+		return obd, err
+	}
+
+	time.Sleep(100 * time.Millisecond)
+
+	_, err = obd.read()
 	if err != nil {
 		return obd, err
 	}
@@ -110,20 +117,14 @@ func (o *OBD) GetEngineLoad() (float64, error) {
 	return float64(val) / 2.55, err
 }
 
-func (o *OBD) current(pid int) ([]byte, error) {
-	cmd := fmt.Sprintf("01%02x\r\n", pid)
-	log.Printf("Writing %s", cmd)
-	n, err := o.ser.Write([]byte(cmd))
+func (obd *OBD) current(pid int) ([]byte, error) {
+	cmd := fmt.Sprintf("01%02x", pid)
+	out, err := obd.exec(cmd)
 	if err != nil {
 		return nil, err
 	}
 
-	buf := make([]byte, 128)
-	n, err = o.ser.Read(buf)
-	log.Printf("Read: %s", string(buf[:n]))
-	refined := refineInput(buf[:n])
-	//log.Printf("Refined: %v", refined)
-	return refined, err
+	return parseMode1Response(out)
 }
 
 func (o *OBD) currentInt(pid int) (int, error) {
@@ -220,29 +221,20 @@ func (obd *OBD) listSupportedPIDs() ([]uint, error) {
 }
 
 func (obd *OBD) listPIDsForBase(base int) ([]uint, error) {
-	cmd := fmt.Sprintf("01%02x\r\n", base)
-	//log.Printf("Polling for base %d", base)
-	_, err := obd.ser.Write([]byte(cmd))
+	cmd := fmt.Sprintf("01%02x", base)
+	out, err := obd.exec(cmd)
 	if err != nil {
 		return nil, err
 	}
 
-	buf := make([]byte, 128)
-	n, err := obd.ser.Read(buf)
+	res, err := parseMode1Response(out)
 	if err != nil {
 		return nil, err
 	}
-
-	//log.Printf("Read: %s", string(buf[:n]))
-
-	return extractPids(buf[:n]), nil
+	return extractPids(res, base), nil
 }
 
-func extractPids(buf []byte) []uint {
-	buf = refineInput(buf)
-
-	//log.Printf("Working with: %s", string(buf))
-
+func extractPids(buf []byte, base int) []uint {
 	pids := make([]uint, 0)
 	for bytCount := 0; bytCount < len(buf); bytCount++ {
 		byt, err := strconv.ParseInt(string(buf[bytCount]), 16, 8)
@@ -251,7 +243,7 @@ func extractPids(buf []byte) []uint {
 		}
 		for i := 0; i < 4; i++ {
 			if byt >= 8 {
-				pids = append(pids, uint(bytCount*4+i+1))
+				pids = append(pids, uint(base+bytCount*4+i+1))
 			}
 			byt <<= 1
 			byt = byt % 16
@@ -260,18 +252,18 @@ func extractPids(buf []byte) []uint {
 	return pids
 }
 
-func refineInput(buf []byte) []byte {
+func parseMode1Response(buf []byte) ([]byte, error) {
+	log.Printf("Parsing mode 1: %s", string(buf))
+
+	if buf[0] != '4' || buf[1] != '1' {
+		// Error response
+		return nil, fmt.Errorf("Error mode 1 prefix response: %s", string(buf))
+	}
+
 	// trim spaces
 	spaces := []byte{byte(' ')}
 	spl := bytes.Split(buf, spaces)
 	buf = bytes.Join(spl, nil)
 
-	newline := bytes.IndexAny(buf, "\n\r")
-	if newline < 0 {
-		log.Fatal("Error reading.")
-	}
-	// TODO: confirm instead of throwing away
-	//log.Printf("Buf: %+v", buf)
-	//log.Printf("newline: %d", newline)
-	return buf[4:newline]
+	return buf[4:], nil
 }
