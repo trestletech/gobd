@@ -9,10 +9,11 @@ import (
 )
 
 type OBD struct {
-	pids  []uint
-	ser   SerialPort
-	debug func(format string, v ...interface{})
-	id    string
+	pids   []uint
+	ser    SerialPort
+	debug  func(format string, v ...interface{})
+	id     string
+	buffer bytes.Buffer
 }
 
 func NewOBD(ser SerialPort) (*OBD, error) {
@@ -84,12 +85,21 @@ func (obd *OBD) execNoRead(cmd string) error {
 }
 
 func (obd *OBD) read() ([]byte, error) {
-	buf := make([]byte, 128)
-	n, err := obd.ser.Read(buf)
-	if err != nil {
-		return nil, err
+
+	for !bytes.Contains(obd.buffer.Bytes(), []byte{'\r', '\n'}) {
+		buf := make([]byte, 128)
+		n, err := obd.ser.Read(buf)
+		if err != nil {
+			return nil, err
+		}
+		obd.buffer.Write(buf[:n])
 	}
-	out := parseOutput(buf[:n])
+
+	buf := obd.buffer.Bytes()
+
+	obd.buffer.Reset()
+
+	out := parseOutput(buf)
 	obd.debug("\t%s", string(out))
 	obd.debug("\tDone.")
 	return out, nil

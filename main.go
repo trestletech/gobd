@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -14,16 +15,61 @@ func main() {
 		log.Fatal(err)
 	}
 
-	obd, err := NewDebugOBD(s, log.Printf)
+	obd, err := NewDebugOBD(s, func(string, ...interface{}) {})
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Printf("Supported PIDs: %v", obd.pids)
 
-	load, err := obd.GetEngineLoad()
-	if err != nil {
-		log.Fatal(err)
+	tick := time.Tick(1 * time.Second)
+
+	for range tick {
+		str := fmt.Sprintf("{ \"time\": %d,", time.Now().Unix())
+
+		str += `"load": `
+		load, err := obd.GetEngineLoad()
+		if err != nil {
+			str += "null"
+		} else {
+			str += fmt.Sprintf("%f", load)
+		}
+
+		str += `, "temp": `
+		temp, err := obd.GetCoolantTemp()
+		if err != nil {
+			str += "null"
+		} else {
+			str += fmt.Sprintf("%d", temp)
+		}
+
+		str += `, "rpm": `
+		rpm, err := obd.GetRPM()
+		if err != nil {
+			str += "null"
+		} else {
+			str += fmt.Sprintf("%f", rpm)
+		}
+
+		str += `, "speed": `
+		speed, err := obd.GetSpeed()
+		if err != nil {
+			str += "null"
+		} else {
+			str += fmt.Sprintf("%d", speed)
+		}
+
+		str += `, "throttle": `
+		throt, err := obd.GetThrottlePosition()
+		if err != nil {
+			str += "null"
+		} else {
+			str += fmt.Sprintf("%d", throt)
+		}
+
+		str += "}"
+
+		log.Println(str)
+
 	}
-	log.Printf("Engine load: %f", load)
 
 }

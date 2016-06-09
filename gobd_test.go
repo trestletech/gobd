@@ -88,6 +88,18 @@ func (s *GobdSuite) TestNewOBD(c *check.C) {
 	c.Check(obd.pids, check.DeepEquals, []uint{0, 7, 8})
 }
 
+//TODO
+/*
+func (s *GobdSuite) TestReadMulti(c *check.C) {
+	ms := newMockSerial()
+	ms.AddResponseNoNewline("0101", "41 ")
+	ms.AddResponseNoNewline("0101", "01")
+	ms.AddResponseNoNewline("0101", " 00")
+	ms.AddResponseNoNewline("0101", " \r")
+	ms.AddResponseNoNewline("0101", "\n ")
+}
+*/
+
 func (s *GobdSuite) TestParseOutput(c *check.C) {
 	c.Check(parseOutput([]byte("\n > \r hi > there! \r\n >")), check.DeepEquals, []byte("hi > there!"))
 	c.Check(parseOutput([]byte("hi > there!")), check.DeepEquals, []byte("hi > there!"))

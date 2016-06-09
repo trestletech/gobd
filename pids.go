@@ -1,8 +1,8 @@
 package main
 
 // [1 3 4 5 6 7 11 12 13 14 15 16 17 19 21 28 31 32 33 44 46 47 48 49 50 51 52 60 64 65 66 67 68 69 70 71 73 74 76
-var monitorStatusPID int = 1
-var fuelStatusPID int = 3
+//var monitorStatusPID int = 1
+//var fuelStatusPID int = 3
 var engineLoadPID int = 4
 var coolantTempPID int = 5
 
@@ -18,6 +18,9 @@ var speedPID int = 13
 //var timingAdvancePID int = 14
 //var intakeAirTempPID int = 15
 
+var throttlePositionPID int = 17
+
+/*
 type monitorStatus struct{}
 
 func (o *OBD) GetMonitorStatus() (monitorStatus, error) {
@@ -31,6 +34,7 @@ func (o *OBD) GetFuelStatus() (fuelStatus, error) {
 	//TODO
 	return fuelStatus{}, nil
 }
+*/
 
 func (o *OBD) GetEngineLoad() (float64, error) {
 	if !includes(o.pids, engineLoadPID) {
@@ -62,4 +66,12 @@ func (o *OBD) GetSpeed() (int, error) {
 	}
 	val, err := o.currentInt(speedPID)
 	return val, err
+}
+
+func (o *OBD) GetThrottlePosition() (float64, error) {
+	if !includes(o.pids, throttlePositionPID) {
+		return float64(0), pidNotSupportedError(throttlePositionPID)
+	}
+	val, err := o.currentInt(throttlePositionPID)
+	return float64(val) / 2.55, err
 }

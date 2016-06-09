@@ -109,3 +109,26 @@ func (ps *PidsSuite) TestSpeed(c *check.C) {
 	c.Assert(err, check.IsNil)
 	c.Check(val, check.Equals, 255)
 }
+
+func (ps *PidsSuite) TestThrottle(c *check.C) {
+	ms := newMockSerial()
+	ms.addResponse("0100", "41 00 00 00 80")
+	ms.addResponse("0111", "41 11 55")
+
+	obd, err := NewDebugOBD(ms, c.Logf)
+	c.Assert(err, check.IsNil)
+
+	val, err := obd.GetThrottlePosition()
+	c.Assert(err, check.IsNil)
+	c.Check(math.Abs(val-33.333333) < 0.00001, check.Equals, true)
+
+	ms.addResponse("0111", "41 11 00")
+	val, err = obd.GetThrottlePosition()
+	c.Assert(err, check.IsNil)
+	c.Check(math.Abs(val) < 0.00001, check.Equals, true)
+
+	ms.addResponse("0111", "41 11 FF")
+	val, err = obd.GetThrottlePosition()
+	c.Assert(err, check.IsNil)
+	c.Check(math.Abs(val-100) < 0.00001, check.Equals, true)
+}
