@@ -44,8 +44,11 @@ func (ms *mockSerial) Read(b []byte) (int, error) {
 		return len(res), nil
 	}
 
+	// Return a newline so that the reader can advance.
+	b[0] = byte('\r')
+	b[1] = byte('\n')
 	// Nothing in the queue
-	return 0, nil
+	return 2, nil
 }
 
 func (ms *mockSerial) Write(b []byte) (int, error) {

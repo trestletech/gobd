@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 )
@@ -136,7 +135,7 @@ func (o *OBD) currentInt(pid int) (int, error) {
 	for i := len(b) - 1; i >= 0; i-- {
 		byt, err := strconv.ParseInt(string(b[i]), 16, 8)
 		if err != nil {
-			log.Fatalf("Can't parse hex %s in %v", string(b[i]), b)
+			return 0, fmt.Errorf("Can't parse hex %s in %v", string(b[i]), b)
 		}
 
 		val += int(byt) * factor
@@ -232,15 +231,15 @@ func (obd *OBD) listPIDsForBase(base int) ([]uint, error) {
 	if err != nil {
 		return nil, err
 	}
-	return extractPids(res, base), nil
+	return extractPids(res, base)
 }
 
-func extractPids(buf []byte, base int) []uint {
+func extractPids(buf []byte, base int) ([]uint, error) {
 	pids := make([]uint, 0)
 	for bytCount := 0; bytCount < len(buf); bytCount++ {
 		byt, err := strconv.ParseInt(string(buf[bytCount]), 16, 8)
 		if err != nil {
-			log.Fatalf("Can't parse hex %s in %v", string(buf[bytCount]), buf)
+			return nil, fmt.Errorf("Can't parse hex %s in %v", string(buf[bytCount]), buf)
 		}
 		for i := 0; i < 4; i++ {
 			if byt >= 8 {
@@ -250,7 +249,7 @@ func extractPids(buf []byte, base int) []uint {
 			byt = byt % 16
 		}
 	}
-	return pids
+	return pids, nil
 }
 
 func parseMode1Response(buf []byte) ([]byte, error) {
