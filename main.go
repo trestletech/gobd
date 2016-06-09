@@ -15,7 +15,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	obd, err := NewDebugOBD(s, func(string, ...interface{}) {})
+	obd, err := NewDebugOBD(s, log.Printf)
 	if err != nil {
 		log.Fatal(err)
 	}
