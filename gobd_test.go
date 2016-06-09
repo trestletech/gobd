@@ -136,7 +136,7 @@ func (s *GobdSuite) TestCurrentInt(c *check.C) {
 	ms := newMockSerial()
 	ms.addResponse("0100", "41 00 07")
 	ms.addResponse("0106", "41 06 00 00")
-	ms.addResponse("0107", "41 07 55 82 A0")
+	ms.addResponse("0107", "41 07 55 82 a0")
 	ms.addResponse("0108", "41 08 F")
 
 	obd, err := NewDebugOBD(ms, c.Logf)
@@ -162,8 +162,8 @@ func (s *GobdSuite) TestListPidsFull(c *check.C) {
 	ms.addResponse("0140", "41 40 01 00 00 01")
 	ms.addResponse("0160", "41 60 01 00 00 01")
 	ms.addResponse("0180", "41 80 01 00 00 01")
-	ms.addResponse("01a0", "41 A0 01 00 00 01")
-	ms.addResponse("01c0", "41 C0 01 00 00 01")
+	ms.addResponse("01a0", "41 a0 01 00 00 01")
+	ms.addResponse("01c0", "41 c0 01 00 00 01")
 
 	obd, err := NewDebugOBD(ms, c.Logf)
 	c.Assert(err, check.IsNil)
@@ -171,16 +171,19 @@ func (s *GobdSuite) TestListPidsFull(c *check.C) {
 }
 
 func (s *GobdSuite) ParseMode1(c *check.C) {
-	_, err := parseMode1Response([]byte(""))
+	_, err := parseMode1Response([]byte(""), "0101")
 	c.Check(err, check.NotNil)
 
-	_, err = parseMode1Response([]byte("UNAVAILABLE"))
+	_, err = parseMode1Response([]byte("UNAVAILABLE"), "0101")
 	c.Check(err, check.NotNil)
 
-	_, err = parseMode1Response([]byte("00 00 00"))
+	_, err = parseMode1Response([]byte("00 00 00"), "0100")
 	c.Check(err, check.NotNil)
 
-	val, err := parseMode1Response([]byte("41 00 00 11 22"))
+	_, err = parseMode1Response([]byte("41 00 00 11 22"), "01ff")
+	c.Check(err, check.IsNil)
+
+	val, err := parseMode1Response([]byte("41 00 00 11 22"), "0100")
 	c.Check(err, check.IsNil)
 	c.Check(val, check.DeepEquals, []byte{'0', '0', '1', '1', '2', '2'})
 }

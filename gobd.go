@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -86,6 +88,7 @@ func (obd *OBD) execNoRead(cmd string) error {
 func (obd *OBD) read() ([]byte, error) {
 
 	for !bytes.Contains(obd.buffer.Bytes(), []byte{'\r', '\n'}) {
+		time.Sleep(10 * time.Millisecond)
 		buf := make([]byte, 128)
 		n, err := obd.ser.Read(buf)
 		if err != nil {
@@ -121,7 +124,7 @@ func (obd *OBD) current(pid int) ([]byte, error) {
 		return nil, err
 	}
 
-	return parseMode1Response(out)
+	return parseMode1Response(out, cmd)
 }
 
 func (o *OBD) currentInt(pid int) (int, error) {
@@ -227,7 +230,7 @@ func (obd *OBD) listPIDsForBase(base int) ([]uint, error) {
 		return nil, err
 	}
 
-	res, err := parseMode1Response(out)
+	res, err := parseMode1Response(out, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -252,16 +255,27 @@ func extractPids(buf []byte, base int) ([]uint, error) {
 	return pids, nil
 }
 
-func parseMode1Response(buf []byte) ([]byte, error) {
-	if len(buf) < 2 || buf[0] != '4' || buf[1] != '1' {
-		// Error response
-		return nil, fmt.Errorf("Error mode 1 prefix response: %s", string(buf))
+func parseMode1Response(buf []byte, request string) ([]byte, error) {
+	if !strings.HasPrefix(request, "01") {
+		return nil, fmt.Errorf("Invalid prefix for mode 1 request: %v", request)
+	}
+	if len(request) < 4 {
+		return nil, fmt.Errorf("Invalid length for mode 1 request: %v", request)
 	}
 
 	// trim spaces
 	spaces := []byte{byte(' ')}
 	spl := bytes.Split(buf, spaces)
 	buf = bytes.Join(spl, nil)
+
+	if len(buf) < 2 || buf[0] != '4' || buf[1] != '1' {
+		// Error response
+		return nil, fmt.Errorf("Error mode 1 prefix response: %s", string(buf))
+	}
+	if buf[2] != request[2] || buf[3] != request[3] {
+		log.Printf("Mismatched response!")
+		return nil, fmt.Errorf("Mismatched response codes. Requested: '%s', got '%v'", request, string(buf[0:4]))
+	}
 
 	return buf[4:], nil
 }

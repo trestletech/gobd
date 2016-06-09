@@ -63,7 +63,7 @@ func main() {
 		if err != nil {
 			str += "null"
 		} else {
-			str += fmt.Sprintf("%d", throt)
+			str += fmt.Sprintf("%f", throt)
 		}
 
 		str += "}"
