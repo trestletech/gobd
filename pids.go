@@ -20,6 +20,9 @@ var speedPID int = 13
 
 var throttlePositionPID int = 17
 
+var fuelLevelPID int = 47
+var barometricPressurePID int = 51
+
 /*
 type monitorStatus struct{}
 
@@ -74,4 +77,20 @@ func (o *OBD) GetThrottlePosition() (float64, error) {
 	}
 	val, err := o.currentInt(throttlePositionPID)
 	return float64(val) / 2.55, err
+}
+
+func (o *OBD) GetFuelLevel() (float64, error) {
+	if !includes(o.pids, fuelLevelPID) {
+		return float64(0), pidNotSupportedError(fuelLevelPID)
+	}
+	val, err := o.currentInt(fuelLevelPID)
+	return float64(val) / 2.55, err
+}
+
+func (o *OBD) GetBarometricPressure() (int, error) {
+	if !includes(o.pids, barometricPressurePID) {
+		return 0, pidNotSupportedError(barometricPressurePID)
+	}
+	val, err := o.currentInt(barometricPressurePID)
+	return val, err
 }

@@ -274,6 +274,8 @@ func parseMode1Response(buf []byte, request string) ([]byte, error) {
 	}
 	if buf[2] != request[2] || buf[3] != request[3] {
 		log.Printf("Mismatched response!")
+		// Likely that we're just misaligned -- we're getting an old request. Slow down?
+		time.Sleep(50 * time.Millisecond)
 		return nil, fmt.Errorf("Mismatched response codes. Requested: '%s', got '%v'", request, string(buf[0:4]))
 	}
 

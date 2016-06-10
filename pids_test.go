@@ -132,3 +132,51 @@ func (ps *PidsSuite) TestThrottle(c *check.C) {
 	c.Assert(err, check.IsNil)
 	c.Check(math.Abs(val-100) < 0.00001, check.Equals, true)
 }
+
+func (ps *PidsSuite) TestFuelLevel(c *check.C) {
+	ms := newMockSerial()
+	ms.addResponse("0100", "41 00 00 00 00 01")
+	ms.addResponse("0120", "41 20 00 02 00 00")
+	ms.addResponse("012f", "41 2f 55")
+
+	obd, err := NewDebugOBD(ms, c.Logf)
+	c.Assert(err, check.IsNil)
+
+	val, err := obd.GetFuelLevel()
+	c.Assert(err, check.IsNil)
+	c.Check(math.Abs(val-33.333333) < 0.00001, check.Equals, true)
+
+	ms.addResponse("012f", "41 2f 00")
+	val, err = obd.GetFuelLevel()
+	c.Assert(err, check.IsNil)
+	c.Check(math.Abs(val) < 0.00001, check.Equals, true)
+
+	ms.addResponse("012f", "41 2f ff")
+	val, err = obd.GetFuelLevel()
+	c.Assert(err, check.IsNil)
+	c.Check(math.Abs(val-100) < 0.00001, check.Equals, true)
+}
+
+func (ps *PidsSuite) TestBarometricPressure(c *check.C) {
+	ms := newMockSerial()
+	ms.addResponse("0100", "41 00 00 00 00 01")
+	ms.addResponse("0120", "41 20 00 00 20 00")
+	ms.addResponse("0133", "41 33 55")
+
+	obd, err := NewDebugOBD(ms, c.Logf)
+	c.Assert(err, check.IsNil)
+
+	val, err := obd.GetBarometricPressure()
+	c.Assert(err, check.IsNil)
+	c.Check(val, check.Equals, 85)
+
+	ms.addResponse("0133", "41 33 00")
+	val, err = obd.GetBarometricPressure()
+	c.Assert(err, check.IsNil)
+	c.Check(val, check.Equals, 0)
+
+	ms.addResponse("0133", "41 33 ff")
+	val, err = obd.GetBarometricPressure()
+	c.Assert(err, check.IsNil)
+	c.Check(val, check.Equals, 255)
+}
