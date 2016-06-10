@@ -272,7 +272,10 @@ func parseMode1Response(buf []byte, request string) ([]byte, error) {
 		// Error response
 		return nil, fmt.Errorf("Error mode 1 prefix response: %s", string(buf))
 	}
-	if buf[2] != request[2] || buf[3] != request[3] {
+
+	lowBuf := bytes.ToLower(buf)
+	lowReq := strings.ToLower(request)
+	if lowBuf[2] != lowReq[2] || lowBuf[3] != lowReq[3] {
 		log.Printf("Mismatched response!")
 		// Likely that we're just misaligned -- we're getting an old request. Slow down?
 		time.Sleep(50 * time.Millisecond)

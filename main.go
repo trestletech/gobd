@@ -21,7 +21,7 @@ func main() {
 	}
 	log.Printf("Supported PIDs: %v", obd.pids)
 
-	tick := time.Tick(1 * time.Second)
+	tick := time.Tick(3 * time.Second)
 
 	for range tick {
 		str := fmt.Sprintf("{ \"time\": %d,", time.Now().Unix())
@@ -64,6 +64,14 @@ func main() {
 			str += "null"
 		} else {
 			str += fmt.Sprintf("%f", throt)
+		}
+
+		str += `, "fuel-level": `
+		fuel, err := obd.GetFuelLevel()
+		if err != nil {
+			str += "null"
+		} else {
+			str += fmt.Sprintf("%f", fuel)
 		}
 
 		str += "}"

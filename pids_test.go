@@ -151,7 +151,7 @@ func (ps *PidsSuite) TestFuelLevel(c *check.C) {
 	c.Assert(err, check.IsNil)
 	c.Check(math.Abs(val) < 0.00001, check.Equals, true)
 
-	ms.addResponse("012f", "41 2f ff")
+	ms.addResponse("012f", "41 2F FF")
 	val, err = obd.GetFuelLevel()
 	c.Assert(err, check.IsNil)
 	c.Check(math.Abs(val-100) < 0.00001, check.Equals, true)
