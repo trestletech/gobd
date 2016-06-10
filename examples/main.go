@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/tarm/serial"
+	"github.com/trestletech/gobd"
 )
 
 func main() {
@@ -15,7 +16,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	obd, err := NewDebugOBD(s, log.Printf)
+	obd, err := gobd.NewDebugOBD(s, log.Printf)
 	if err != nil {
 		log.Fatal(err)
 	}
