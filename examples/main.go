@@ -20,7 +20,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Supported PIDs: %v", obd.pids)
 
 	tick := time.Tick(3 * time.Second)
 
