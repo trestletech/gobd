@@ -2,3 +2,4 @@ gobd
 vendor
 main
 *.swp
+data
